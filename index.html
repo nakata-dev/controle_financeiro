@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Saúde Financeira</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+  <!--TESTANDO ATUALIZAÇÃO GITHUB-->
+  <header class="header" role="banner">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">￥</div>
+        <div class="titles">
+          <h1>Saúde Financeira<span class="pro">PRO</span></h1>
+          <p>Este Aplicativo vai organizar sua vida</p>
+        </div>
+      </div>
+
+      <div class="menu-slot">
+        <button class="icon-btn" id="btnBurger" type="button" aria-label="Abrir menu" aria-controls="drawer" aria-expanded="false">☰</button>
+      </div>
+
+      <div class="actions">
+        <button class="pill ghost" id="btnSave" type="button">💾 Salvar</button>
+        <button class="pill ghost" id="btnClearMonth" type="button">🧼 Limpar mês</button>
+        <button class="pill" id="btnPDF" type="button">🧾 Gerar PDF</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container" role="main">
+    <section class="topbar" aria-label="Barra superior">
+      <label class="field">
+        <span>Mês</span>
+        <input id="month" type="month" />
+        <small>Dados salvos por mês.</small>
+      </label>
+
+      <div class="fx-card" aria-label="Câmbio diário">
+        <div class="fx-head">
+          <div>
+            <div class="fx-title">Câmbio diário (base JPY)</div>
+            <div class="fx-sub" id="fxMeta">Carregando…</div>
+          </div>
+          <button class="pill ghost" id="btnRefreshFX" type="button">↻ Atualizar</button>
+        </div>
+
+        <div class="fx-grid">
+          <div class="mini">
+            <span>JPY → BRL</span>
+            <strong id="rateBRL">—</strong>
+          </div>
+          <div class="mini">
+            <span>JPY → USD</span>
+            <strong id="rateUSD">—</strong>
+          </div>
+        </div>
+
+        <small class="hint" style="margin-top:10px">
+          Dica: itens em <b>R$</b> e <b>US$</b> são convertidos para JPY para compor o saldo do mês.
+        </small>
+      </div>
+    </section>
+
+    <section class="card" id="secConfig" aria-label="Configurações">
+      <div class="card-head">
+        <h2>Configurações</h2>
+        <p>Preencha os dados base. Isso guia todos os cálculos do mês.</p>
+      </div>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Nome</span>
+          <input id="name" type="text" placeholder="Ex: Aiko" autocomplete="name" />
+        </label>
+
+        <label class="field">
+          <span>Empresa</span>
+          <input id="company" type="text" placeholder="Ex: Fábrica X" />
+        </label>
+
+        <label class="field">
+          <span>Faixa (opcional)</span>
+          <input id="rangeText" type="text" placeholder="Ex: 1400 円 ~ 1500 円" />
+          <small>Apenas visual (não entra no cálculo).</small>
+        </label>
+
+        <label class="field">
+          <span>Valor por hora (JPY)</span>
+          <input id="hourValue" type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ex: 1450" />
+        </label>
+
+        <label class="field">
+          <span>Multiplicador hora extra</span>
+          <input id="overtimeMult" type="number" inputmode="decimal" min="1" step="0.01" />
+          <small>Ex: 1.25 = +25%.</small>
+        </label>
+
+        <label class="field">
+          <span>Auto-salvar</span>
+          <select id="autosave">
+            <option value="off">Desligado</option>
+            <option value="on" selected>Ligado (suave)</option>
+          </select>
+          <small>Não atrapalha enquanto digita.</small>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3>Turnos (horas padrão)</h3>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Turno A: horas normais</span>
+          <input id="aNormal" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Turno A: horas extras</span>
+          <input id="aExtra" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Turno B: horas normais</span>
+          <input id="bNormal" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Turno B: horas extras</span>
+          <input id="bExtra" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+      </div>
+    </section>
+
+    <section class="card" id="secTurns" aria-label="Turnos">
+      <div class="card-head">
+        <h2>Turnos do mês</h2>
+        <p>Quantos dias foram feitos no Turno A e Turno B? O sistema calcula a receita.</p>
+      </div>
+
+      <div class="grid-3">
+        <label class="field">
+          <span>Dias Turno A</span>
+          <input id="daysA" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Dias Turno B</span>
+          <input id="daysB" type="number" inputmode="numeric" min="0" step="1" />
+        </label>
+
+        <label class="field">
+          <span>Bônus (JPY)</span>
+          <input id="bonusJPY" type="number" inputmode="decimal" min="0" step="0.01" />
+        </label>
+      </div>
+
+      <div class="summary-strip">
+        <div class="sum-item">
+          <span>Receita (JPY)</span>
+          <strong id="incomeJPY">—</strong>
+          <small id="incomeFormula" class="muted">Fórmula: —</small>
+        </div>
+
+        <div class="sum-item">
+          <span>Despesas (JPY)</span>
+          <strong id="expensesJPY">—</strong>
+          <small class="muted">Fixas + variáveis + pagar/receber do mês</small>
+        </div>
+
+        <div class="sum-item glow">
+          <span>Saldo (JPY)</span>
+          <strong id="balanceJPY">—</strong>
+          <small class="muted">Receita + recebidos - despesas - pagos</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="secExpenses" aria-label="Despesas">
+      <div class="card-head">
+        <div class="head-row">
+          <div>
+            <h2>Despesas</h2>
+            <p>Exibição compacta e legível, sem barra horizontal. Detalhe por dia é opcional.</p>
+          </div>
+
+          <div class="font-tools" aria-label="Acessibilidade da grade de dias">
+            <button class="small-btn" id="btnFontDown" type="button" title="Diminuir fonte">A-</button>
+            <button class="small-btn" id="btnFontUp" type="button" title="Aumentar fonte">A+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-cols">
+        <section class="list-card" aria-label="Despesas fixas">
+          <div class="list-head">
+            <h3>Despesas Fixas</h3>
+            <button class="pill ghost" type="button" data-add="fixed">+ Adicionar</button>
+          </div>
+
+          <div class="expense-list" id="listFixed"></div>
+
+          <div class="list-footer">
+            <span>Total Fixas</span>
+            <strong id="totalFixed">—</strong>
+          </div>
+        </section>
+
+        <section class="list-card" aria-label="Despesas variáveis">
+          <div class="list-head">
+            <h3>Despesas Variáveis</h3>
+            <button class="pill ghost" type="button" data-add="variable">+ Adicionar</button>
+          </div>
+
+          <div class="expense-list" id="listVar"></div>
+
+          <div class="list-footer">
+            <span>Total Variáveis</span>
+            <strong id="totalVar">—</strong>
+          </div>
+        </section>
+      </div>
+
+      <small class="hint">Dica: clique em <b>Dias</b> se quiser preencher valores por dia (opcional).</small>
+    </section>
+
+    <section class="card" id="secDeals" aria-label="Receber & Pagar">
+      <div class="card-head">
+        <h2>Receber &amp; Pagar</h2>
+        <p>Negociações e prestações. Cada item pode ser em <b>JPY</b>, <b>R$</b> ou <b>US$</b>. O saldo do mês usa conversão para JPY.</p>
+      </div>
+
+      <div class="summary-strip">
+        <div class="sum-item">
+          <span>Recebidos no mês (JPY)</span>
+          <strong id="receivedMonthJPY">—</strong>
+          <small class="muted">Somatório convertido para JPY</small>
+        </div>
+
+        <div class="sum-item">
+          <span>Pagos no mês (JPY)</span>
+          <strong id="paidMonthJPY">—</strong>
+          <small class="muted">Somatório convertido para JPY</small>
+        </div>
+
+        <div class="sum-item glow">
+          <span>Saldo líquido do mês (JPY)</span>
+          <strong id="dealsNetJPY">—</strong>
+          <small class="muted">Recebidos - pagos</small>
+        </div>
+      </div>
+
+      <div class="two-cols">
+        <section class="list-card" aria-label="Receber">
+          <div class="list-head">
+            <h3>Receber</h3>
+            <button class="pill ghost" type="button" data-deal-add="receber">+ Nova venda</button>
+          </div>
+
+          <div class="deal-list" id="dealReceber"></div>
+
+          <div class="list-footer">
+            <span>Total a receber (restante, em JPY)</span>
+            <strong id="totalReceberRemaining">—</strong>
+          </div>
+        </section>
+
+        <section class="list-card" aria-label="Pagar">
+          <div class="list-head">
+            <h3>Pagar</h3>
+            <button class="pill ghost" type="button" data-deal-add="pagar">+ Nova compra</button>
+          </div>
+
+          <div class="deal-list" id="dealPagar"></div>
+
+          <div class="list-footer">
+            <span>Total a pagar (restante, em JPY)</span>
+            <strong id="totalPagarRemaining">—</strong>
+          </div>
+        </section>
+      </div>
+
+      <small class="hint">
+        Dica: toque em <b>Registrar</b> para abrir o menu flutuante e lançar a parcela na moeda do item.
+      </small>
+    </section>
+
+    <section class="card" id="secSavings" aria-label="Receita em moedas">
+      <div class="card-head">
+        <h2>Receitas convertidas</h2>
+        <p>Digite o valor economizado em JPY e veja o equivalente em Real e Dólar (câmbio diário).</p>
+      </div>
+
+      <div class="grid-3">
+        <label class="field">
+          <span>Economizado (JPY)</span>
+          <input id="savedJPY" type="number" inputmode="decimal" min="0" step="0.01" />
+          <small>Valor manual (não altera o saldo).</small>
+        </label>
+
+        <div class="kpi">
+          <span>Receita em Real (R$)</span>
+          <strong id="savedBRL">—</strong>
+          <small class="muted">Base: JPY → BRL</small>
+        </div>
+
+        <div class="kpi">
+          <span>Receita em Dólar ($)</span>
+          <strong id="savedUSD">—</strong>
+          <small class="muted">Base: JPY → USD</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" id="secSummary" aria-label="Resumo">
+      <div class="card-head">
+        <h2>Resumo</h2>
+        <p>Fechamento do mês.</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi">
+          <span>Receitas</span>
+          <strong id="kpiIncome">—</strong>
+          <small class="muted">Turno A + Turno B + bônus + recebidos</small>
+        </div>
+
+        <div class="kpi">
+          <span>Despesas</span>
+          <strong id="kpiExpenses">—</strong>
+          <small class="muted">Fixas + variáveis + pagos</small>
+        </div>
+
+        <div class="kpi glow">
+          <span>Saldo</span>
+          <strong id="kpiBalance">—</strong>
+          <small class="muted">Receitas - despesas</small>
+        </div>
+
+        <label class="field">
+          <span>Enviado (JPY)</span>
+          <input id="sentJPY" type="number" inputmode="decimal" min="0" step="0.01" />
+          <small>Remessas/transferências.</small>
+        </label>
+
+        <div class="kpi">
+          <span>Diferença</span>
+          <strong id="kpiDiff">—</strong>
+          <small class="muted">Saldo - enviado</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="print-only" id="printReport" aria-hidden="true">
+      <h1>Relatório Financeiro</h1>
+      <div class="print-meta" id="printMeta"></div>
+
+      <h2>Receitas</h2>
+      <div class="print-grid" id="printIncome"></div>
+
+      <h2>Receber &amp; Pagar (mês, convertido para JPY)</h2>
+      <div class="print-grid" id="printDealsMonth"></div>
+
+      <h2>Despesas Fixas</h2>
+      <table class="print-table" id="printFixed"></table>
+
+      <h2>Despesas Variáveis</h2>
+      <table class="print-table" id="printVar"></table>
+
+      <h2>Totais</h2>
+      <div class="print-grid" id="printTotals"></div>
+
+      <h2>Receitas convertidas</h2>
+      <div class="print-grid" id="printSavings"></div>
+    </section>
+  </main>
+
+  <div class="drawer-overlay" id="drawerOverlay" aria-hidden="true"></div>
+
+  <aside class="drawer" id="drawer" aria-label="Menu">
+    <div class="drawer-head">
+      <div class="drawer-badge">Menu</div>
+      <button class="icon-btn" id="btnCloseDrawer" type="button" aria-label="Fechar">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <button class="drawer-item" data-scroll="#secConfig" type="button">
+        <strong>Configurações</strong><span>Primeiro passo</span>
+      </button>
+      <button class="drawer-item" data-scroll="#secTurns" type="button">
+        <strong>Turnos</strong><span>Receita do mês</span>
+      </button>
+      <button class="drawer-item" data-scroll="#secExpenses" type="button">
+        <strong>Despesas</strong><span>Fixas e variáveis</span>
+      </button>
+      <button class="drawer-item" data-scroll="#secDeals" type="button">
+        <strong>Receber &amp; Pagar</strong><span>Negociações e prestações</span>
+      </button>
+      <button class="drawer-item" data-scroll="#secSavings" type="button">
+        <strong>Receitas</strong><span>Real e Dólar</span>
+      </button>
+      <button class="drawer-item" data-scroll="#secSummary" type="button">
+        <strong>Resumo</strong><span>Fechamento</span>
+      </button>
+
+      <div class="drawer-sep"></div>
+
+      <small class="drawer-note">
+        PDF: use “Gerar PDF” e salve como PDF pelo navegador.
+      </small>
+    </div>
+  </aside>
+
+  <div class="sheet-overlay" id="dealOverlay" aria-hidden="true"></div>
+  <section class="sheet" id="dealSheet" role="dialog" aria-modal="true" aria-labelledby="dealSheetTitle">
+    <div class="sheet-handle" aria-hidden="true"></div>
+
+    <div class="sheet-head">
+      <div>
+        <h2 id="dealSheetTitle">Registrar pagamento</h2>
+        <p id="dealSheetSub">—</p>
+      </div>
+      <button class="icon-btn" id="btnCloseDealSheet" type="button" aria-label="Fechar">✕</button>
+    </div>
+
+    <div class="sheet-preview">
+      <div class="preview-item">
+        <span>Moeda do item</span>
+        <strong id="dealCurrency">—</strong>
+      </div>
+      <div class="preview-item">
+        <span>Restante</span>
+        <strong id="dealRemaining">—</strong>
+      </div>
+      <div class="preview-score" id="dealProgress">—</div>
+    </div>
+
+    <div class="turbo">
+      <div class="turbo-title">Novo lançamento</div>
+
+      <div class="grid-2">
+        <label class="field">
+          <span>Data</span>
+          <input id="payDate" type="date" />
+        </label>
+
+        <label class="field">
+          <span id="payAmountLabel">Valor</span>
+          <input id="payAmount" type="number" inputmode="decimal" min="0" step="0.01" />
+          <small id="payAmountHint">—</small>
+        </label>
+      </div>
+
+      <div class="sheet-actions">
+        <button class="pill ghost" id="btnAddPayment" type="button">Adicionar ✅</button>
+        <button class="pill" id="btnFinishDeal" type="button">Concluir</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="pay-list" id="paymentsList"></div>
+  </section>
+
+  <footer class="footer">
+    Copyright &copy; 2026 - Ailton A. Nakata
+  </footer>
+
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
